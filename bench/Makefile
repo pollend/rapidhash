@@ -39,6 +39,9 @@ LDFLAGS  += $(MOREFLAGS)
 
 OBJ_LIST  = main.o bhDisplay.o benchHash.o benchfn.o timefn.o
 
+C3C     ?= c3c
+C3FLAGS ?= -O3 --x86cpu=baseline
+
 
 default: benchHash
 
@@ -60,6 +63,17 @@ benchHash_hw: CXXFLAGS += -mavx2 -mpclmul -std=c++14
 benchHash benchHash32 benchHash_avx2 benchHash_avx512 benchHash_nosimd benchHash_hw: $(OBJ_LIST)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
+# Also benchmarks the C3 port, requires c3c.
+# main.c gets its own object so a main.o from a plain build is never reused without the C3 entries.
+bench-c3: main_c3.o bhDisplay.o benchHash.o benchfn.o timefn.o rapidhash_c3.a
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $^ $(LDFLAGS) -o $@
+
+rapidhash_c3.a: ../rapidhash.c3 rapidhash_c3.c3
+	$(C3C) static-lib $^ $(C3FLAGS) --output-dir . --build-dir c3build --header-output c3build/headers -o rapidhash_c3
+
+main_c3.o: main.c bhDisplay.h hashes.h
+	$(CC) $(CPPFLAGS) -DC3_SUPPORT $(CFLAGS) -c $< -o $@
+
 
 main.o: bhDisplay.h hashes.h
 
@@ -69,4 +83,5 @@ benchHash.o: benchHash.h
 
 
 clean:
-	$(RM) *.o benchHash benchHash32 benchHash_avx2 benchHash_avx512 benchHash_hw
+	$(RM) *.o benchHash benchHash32 benchHash_avx2 benchHash_avx512 benchHash_hw bench-c3 rapidhash_c3.a
+	$(RM) -r c3build

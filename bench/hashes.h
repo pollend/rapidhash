@@ -91,19 +91,35 @@ size_t xxh3_wrapper(const void* src, size_t srcSize, void* dst, size_t dstCapaci
     return (size_t) XXH3_64bits(src, srcSize);
 }
 
+#ifdef C3_SUPPORT
+/* Implemented in rapidhash_c3.c3 */
+size_t rapidhashC3_wrapper(const void* src, size_t srcSize, void* dst, size_t dstCapacity, void* customPayload);
+size_t rapidhashMicroC3_wrapper(const void* src, size_t srcSize, void* dst, size_t dstCapacity, void* customPayload);
+size_t rapidhashNanoC3_wrapper(const void* src, size_t srcSize, void* dst, size_t dstCapacity, void* customPayload);
+#endif
+
 /* ==================================================
  * Table of hashes
  * =============================================== */
 
 #include "bhDisplay.h"   /* Bench_Entry */
 
+#ifdef C3_SUPPORT
+#  define NB_HASHES 7
+#else
 #  define NB_HASHES 4
+#endif
 
 Bench_Entry const hashCandidates[NB_HASHES] = {
     { "rapidhash" , rapidhash_wrapper },
     { "rapidhashMicro" , rapidhashMicro_wrapper },
     { "rapidhashNano" , rapidhashNano_wrapper },
     { "xxh3"  , xxh3_wrapper },
+#ifdef C3_SUPPORT
+    { "rapidhashC3" , rapidhashC3_wrapper },
+    { "rapidhashMicroC3" , rapidhashMicroC3_wrapper },
+    { "rapidhashNanoC3" , rapidhashNanoC3_wrapper },
+#endif
 #ifdef HARDWARE_SUPPORT
     /* list here codecs which require specific hardware support, such SSE4.1, PCLMUL, AVX2, etc. */
 #endif
